@@ -1,28 +1,23 @@
 #include "stm32f30x.h"
 
-/* Private variables ---------------------------------------------------------*/
-RCC_ClocksTypeDef RCC_Clocks;
-uint32_t sysTickFlag = 0;
-
 /* Private functions ---------------------------------------------------------*/
-
-/**
-  * @brief  This function handles SysTick Handler.
-  * @param  None
-  * @retval None
-  */
-void SysTick_Handler(void)
-{
-	sysTickFlag = 1;
-}
 
 void init(void)
 {
 	GPIO_InitTypeDef	GPIO_InitStructure;
 
 	//Provide clock to GPIO
+	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA, ENABLE);
+	//Initialize GPIOA P0
+	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_0;
+	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;  // Output
+	GPIO_InitStructure.GPIO_OType = GPIO_PuPd_NOPULL; // Push Pull
+	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+	GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+	//Provide clock to GPIOE
 	RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOE, ENABLE);
-	//Initialize GPIO
+	//Initialize GPIOE
 	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_All;
 	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;  // Output
 	GPIO_InitStructure.GPIO_OType = GPIO_OType_PP; // Push Pull
@@ -37,10 +32,6 @@ void init(void)
   */
 int main(void)
 {  
-  /* SysTick end of count event each 100ms */
-  RCC_GetClocksFreq(&RCC_Clocks);
-  SysTick_Config(RCC_Clocks.HCLK_Frequency / 10);
-  
   /* Initialize LEDs and User Button available on STM32F3-Discovery board */
   
   init();
@@ -49,10 +40,7 @@ int main(void)
   /* Infinite loop */
   while (1)
   { 
-	if(sysTickFlag == 1){
-		sysTickFlag = 0;
-		GPIOE->ODR ^= 0xFFFF;
-	}
+		GPIO_Write(GPIOE, (GPIO_ReadInputDataBit(GPIOA, GPIO_Pin_0)) * 0xFFFF);
   }
 }
 
